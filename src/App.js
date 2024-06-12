@@ -7,15 +7,12 @@ import "leaflet/dist/leaflet.css";
 import * as signalR from "@microsoft/signalr";
 
 function App() {
-  
-  const [ZOOM_LEVEL,setZOOM_LEVEL] = useState(17);
-  const [datalogger,setDatalogger] = useState({
-    lat:  10.771785, 
-    lng:  106.658763 
-  })
 
-  localStorage.setItem('datalogger', JSON.stringify(datalogger));
- 
+  const isInitialRender = useRef(true);
+
+  console.log('Begin')
+  const [ZOOM_LEVEL,setZOOM_LEVEL] = useState(17);
+  const [datalogger,setDatalogger] = useState({lat:  10.771785, lng : 106.658763})
   const [center, setCenter] = useState({ lat:  10.771785, lng : 106.658763 });
   const mapRef = useRef();
   
@@ -63,9 +60,10 @@ function App() {
 // });
 
 useEffect(() => {
-  let storedData = JSON.parse(localStorage.getItem('datalogger'));
+  console.log('UseEffect Begin')
+  let storedData = localStorage.getItem('datalogger');
   if (storedData) {
-    setDatalogger(storedData);
+    setDatalogger(JSON.parse(storedData));
   }
 }, []);
 
@@ -116,17 +114,44 @@ const handleMapClickGetLocation = (e) => {
   console.log('lng: '+ e.latlng.lng)
 };
 
-useEffect(() => {
-  // Cập nhật bản đồ với giá trị mới của center và ZOOM_LEVEL
+useEffect(() => { // Cập nhật bản đồ với giá trị mới của center và ZOOM_LEVEL
   if (mapRef.current) {
         mapRef.current.setView(center, ZOOM_LEVEL);
   }
 }, [center]);
 
-
 useEffect(() => {
-  setCenter({ lat:  datalogger.lat, lng : datalogger.lng })
+  if (isInitialRender.current) {// Ngăn không cho `useEffect` chạy lần đầu tiên
+    isInitialRender.current = false;
+    return; 
+  }
+    console.log('datalogger Chance',datalogger)
+    setCenter({ lat:  datalogger.lat, lng : datalogger.lng })
+    localStorage.setItem('datalogger', JSON.stringify(datalogger));
 }, [datalogger]);
+
+// useEffect(() => {
+//   let i = 1
+//   const interval = setInterval(() => {
+//     i++
+//     if(i===1){
+//       setDatalogger({lat:10.77073376363716,lng:106.65862138935935});
+//     }  
+//     else if(i===2){
+//       setDatalogger({lat:10.772950722507412,lng:106.66094404201701});
+//     }
+//     else{
+//       i=0
+//       setDatalogger({lat:10.771785,lng:106.658763 });
+//     }
+    
+//   }, 300000);
+
+//   return () => clearInterval(interval);
+// }, []);
+
+
+console.log(datalogger)
 
   return (
     <div className='App'>
@@ -150,7 +175,7 @@ useEffect(() => {
                                   position={[datalogger.lat,datalogger.lng]}
                                   icon={wakeup}                                
                                 >
-                                   <Popup>
+                                    <Popup>
                                             {`lat:${datalogger.lat} - lng:${datalogger.lng}`}                                         
                                     </Popup>    
                                 </Marker>
