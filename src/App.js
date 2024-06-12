@@ -101,6 +101,8 @@ useEffect(()=>{
     
     i++
     if(i===2){
+      console.log('lat',parseFloat(dataArray[0].Value))
+      console.log('lng',parseFloat(dataArray[1].Value))
       setDatalogger({lat:parseFloat(dataArray[0].Value),lng:parseFloat(dataArray[1].Value)})
       i = 0
       dataArray = []
@@ -147,7 +149,11 @@ useEffect(() => {
                                   className='maker'
                                   position={[datalogger.lat,datalogger.lng]}
                                   icon={wakeup}                                
-                                ></Marker>
+                                >
+                                   <Popup>
+                                            {`lat:${datalogger.lat} - lng:${datalogger.lng}`}                                         
+                                    </Popup>    
+                                </Marker>
                         
                                                        
                     </MapContainer>
