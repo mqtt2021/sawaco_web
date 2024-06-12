@@ -23,7 +23,7 @@ function App() {
     iconUrl: require("./asset/images/position.png" ),
     iconSize: [40,50],
     iconAnchor: [15, 35],
-    popupAnchor: [0, 0], 
+    popupAnchor: [6, -35], 
   })
 
 // const client = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt');
