@@ -5,109 +5,128 @@ import "leaflet/dist/leaflet.css";
 import L from 'leaflet'
 import "leaflet/dist/leaflet.css";
 import * as signalR from "@microsoft/signalr";
+import mqtt from 'mqtt';
 
 function App() {
 
-  const isInitialRender = useRef(true);
-
-  console.log('Begin')
+  // const isInitialRender = useRef(true);
   const [ZOOM_LEVEL,setZOOM_LEVEL] = useState(17);
-  const [datalogger,setDatalogger] = useState({lat:  10.771785, lng : 106.658763})
+  const [datalogger,setDatalogger] = useState({lat:  10.772785, lng : 106.659763})
   const [center, setCenter] = useState({ lat:  10.771785, lng : 106.658763 });
   const mapRef = useRef();
-  
+
   const wakeup = new L.Icon({
     iconUrl: require("./asset/images/position.png" ),
     iconSize: [40,50],
-    iconAnchor: [15, 35],
-    popupAnchor: [6, -35], 
+    iconAnchor: [20, 45],         
+    popupAnchor: [0, -45], 
   })
 
-// const client = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt');
-// useEffect(() => { 
-//       client.on('connect', () => {
-//       console.log("connected");
-//       client.subscribe("SAWACO");
-//     });
-// }, [])
-// client.on('message', (topic, message) => {
-//   if (topic === 'SAWACO') {
-//     const data = message.toString()
-//     console.log('data',data)
-//     // const jsonData = JSON.parse(message.toString());
-//     // 073726.000,1046.309968,N,10639.533136,E,1,6,2.81,18.708,M,2.288,M,,*4C
-//     const mangdauphay = []
-//     for(let i = 0 ; i < data.length;i++){
-//       if(data[i] === ','){
-//         mangdauphay.push(i)
-//       }
-//     }
-//     const lat = parseFloat(data.slice(mangdauphay[0]+1,mangdauphay[1]))/100+0.3085
-//     const lng = parseFloat(data.slice(mangdauphay[2]+1,mangdauphay[3]))/100+0.263597
-//     if(lat === NaN || lng === NaN){  
-//       setDatalogger({
-//         lat:  10.767542921678812, 
-//         lng: 106.65888405789089 ,
-//       })
-//     }
-//     else{
-//        setDatalogger({
-//       lat:  lat, 
-//       lng: lng ,
-//     })
-//     }
-//   }    
-// });
+const client = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt');
 
-useEffect(() => {
-  console.log('UseEffect Begin')
-  let storedData = localStorage.getItem('datalogger');
-  if (storedData) {
-    setDatalogger(JSON.parse(storedData));
-  }
-}, []);
+useEffect(() => { 
+      client.on('connect', () => {
+      console.log("connected");
+      client.subscribe("SAWACO/STM32/Latitude");
+      client.subscribe("SAWACO/STM32/Longitude");
+    });
+}, [])
 
-useEffect(()=>{
+let array = []
 
-  let dataArray = []
-  let i = 0
-
-  let connection = new signalR.HubConnectionBuilder()
-      .withUrl("https://testsawacogps.azurewebsites.net/NotificationHub")
-      .withAutomaticReconnect()
-      .build();
-  // Bắt đầu kết nối
-  connection.start()
-      .then(() => {
-          console.log('Kết nối thành công!');
-      })
-      .catch(err => {
-          console.error('Kết nối thất bại: ', err);
-      });
-  // Lắng nghe sự kiện kết nối lại
-  connection.onreconnected(connectionId => {
-      console.log(`Kết nối lại thành công. Connection ID: ${connectionId}`);
-  });
-  // Lắng nghe sự kiện đang kết nối lại
-  connection.onreconnecting(error => {
-      console.warn('Kết nối đang được thử lại...', error);
-  });
-
-  connection.on("GetAll", data => {
-
-    dataArray.push(JSON.parse(data))
+client.on('message', (topic, message) => {
+  
+  if (topic === 'SAWACO/STM32/Latitude') {
+    const jsonDatalat = JSON.parse(message.toString());
+    array.push(jsonDatalat)
+    console.log(jsonDatalat)
+   
+    // 073726.000,1046.309968,N,10639.533136,E,1,6,2.81,18.708,M,2.288,M,,*4C
+    // const mangdauphay = []
+    // for(let i = 0 ; i < data.length;i++){
+    //   if(data[i] === ','){
+    //     mangdauphay.push(i)
+    //   }
+    // }
+    // const lat = parseFloat(data.slice(mangdauphay[0]+1,mangdauphay[1]))/100+0.3085
+    // const lng = parseFloat(data.slice(mangdauphay[2]+1,mangdauphay[3]))/100+0.263597
+    // if(lat === NaN || lng === NaN){  
+    //   setDatalogger({
+    //     lat:  10.767542921678812, 
+    //     lng: 106.65888405789089 ,
+    //   })
+    // }
+    // else{
+    //    setDatalogger({
+    //   lat:  lat, 
+    //   lng: lng ,
+    // })
+    // }
+  }    
+  if(topic === 'SAWACO/STM32/Longitude'){
+    const jsonDatalng = JSON.parse(message.toString());
+    array.push(jsonDatalng)
+    console.log(jsonDatalng)
     
-    i++
-    if(i===2){
-      console.log('lat',parseFloat(dataArray[0].Value))
-      console.log('lng',parseFloat(dataArray[1].Value))
-      setDatalogger({lat:parseFloat(dataArray[0].Value),lng:parseFloat(dataArray[1].Value)})
-      i = 0
-      dataArray = []
-    }
-  });
+    // const jsonData = JSON.parse(message.toString());
+  }
 
-},[])
+  if(array.length === 2){
+            setDatalogger({ lat:  parseFloat(array[0].value),  lng:  parseFloat(array[1].value)})           
+            console.log(array)
+            array=[]      
+  }
+});
+
+// useEffect(() => {
+//   console.log('UseEffect Begin')
+//   let storedData = localStorage.getItem('datalogger');
+//   if (storedData) {
+//     setDatalogger(JSON.parse(storedData));
+//   }
+// }, []);
+
+// useEffect(()=>{
+
+//   let dataArray = []
+//   let i = 0
+
+//   let connection = new signalR.HubConnectionBuilder()
+//       .withUrl("https://testsawacogps.azurewebsites.net/NotificationHub")
+//       .withAutomaticReconnect()
+//       .build();
+//   // Bắt đầu kết nối
+//   connection.start()
+//       .then(() => {
+//           console.log('Kết nối thành công!');
+//       })
+//       .catch(err => {
+//           console.error('Kết nối thất bại: ', err);
+//       });
+//   // Lắng nghe sự kiện kết nối lại
+//   connection.onreconnected(connectionId => {
+//       console.log(`Kết nối lại thành công. Connection ID: ${connectionId}`);
+//   });
+//   // Lắng nghe sự kiện đang kết nối lại
+//   connection.onreconnecting(error => {
+//       console.warn('Kết nối đang được thử lại...', error);
+//   });
+
+//   connection.on("GetAll", data => {
+
+//     dataArray.push(JSON.parse(data))
+    
+//     i++
+//     if(i===2){
+//       console.log('lat',parseFloat(dataArray[0].Value))
+//       console.log('lng',parseFloat(dataArray[1].Value))
+//       setDatalogger({lat:parseFloat(dataArray[0].Value),lng:parseFloat(dataArray[1].Value)})
+//       i = 0
+//       dataArray = []
+//     }
+//   });
+
+// },[])
 
 const handleMapClickGetLocation = (e) => {
   console.log('lat: '+ e.latlng.lat)
@@ -121,13 +140,9 @@ useEffect(() => { // Cập nhật bản đồ với giá trị mới của cente
 }, [center]);
 
 useEffect(() => {
-  if (isInitialRender.current) {// Ngăn không cho `useEffect` chạy lần đầu tiên
-    isInitialRender.current = false;
-    return; 
-  }
-    console.log('datalogger Chance',datalogger)
+    // console.log('datalogger Chance',datalogger)
     setCenter({ lat:  datalogger.lat, lng : datalogger.lng })
-    localStorage.setItem('datalogger', JSON.stringify(datalogger));
+    // localStorage.setItem('datalogger', JSON.stringify(datalogger));
 }, [datalogger]);
 
 // useEffect(() => {
@@ -151,7 +166,7 @@ useEffect(() => {
 // }, []);
 
 
-console.log(datalogger)
+
 
   return (
     <div className='App'>
@@ -173,7 +188,7 @@ console.log(datalogger)
                                 <Marker 
                                   className='maker'
                                   position={[datalogger.lat,datalogger.lng]}
-                                  icon={wakeup}                                
+                                  icon={ wakeup }                                
                                 >
                                     <Popup>
                                             {`lat:${datalogger.lat} - lng:${datalogger.lng}`}                                         
