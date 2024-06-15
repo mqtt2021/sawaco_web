@@ -27,13 +27,6 @@ function App() {
     iconAnchor: [20, 45],         
     popupAnchor: [0, -45], 
   })
-  const disconnect = new L.Icon({
-    iconUrl: require("./asset/images/disconnect.png" ),
-    iconSize: [40,50],
-    iconAnchor: [20, 45],         
-    popupAnchor: [0, -45], 
-  })
-
 const client = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt');
 
 useEffect(() => { 
