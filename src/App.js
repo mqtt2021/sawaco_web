@@ -10,13 +10,25 @@ import mqtt from 'mqtt';
 function App() {
 
   // const isInitialRender = useRef(true);
+
   const [ZOOM_LEVEL,setZOOM_LEVEL] = useState(17);
   const [datalogger,setDatalogger] = useState({lat:  10.772785, lng : 106.659763})
   const [center, setCenter] = useState({ lat:  10.771785, lng : 106.658763 });
   const mapRef = useRef();
+  
+  const [count, setcount] = useState(0);
+  const [previoucount, setprevioucount] = useState(0);
+  const [timeStamp, settimeStamp] = useState('');
+
 
   const wakeup = new L.Icon({
     iconUrl: require("./asset/images/position.png" ),
+    iconSize: [40,50],
+    iconAnchor: [20, 45],         
+    popupAnchor: [0, -45], 
+  })
+  const disconnect = new L.Icon({
+    iconUrl: require("./asset/images/disconnect.png" ),
     iconSize: [40,50],
     iconAnchor: [20, 45],         
     popupAnchor: [0, -45], 
@@ -41,40 +53,21 @@ client.on('message', (topic, message) => {
     array.push(jsonDatalat)
     console.log(jsonDatalat)
    
-    // 073726.000,1046.309968,N,10639.533136,E,1,6,2.81,18.708,M,2.288,M,,*4C
-    // const mangdauphay = []
-    // for(let i = 0 ; i < data.length;i++){
-    //   if(data[i] === ','){
-    //     mangdauphay.push(i)
-    //   }
-    // }
-    // const lat = parseFloat(data.slice(mangdauphay[0]+1,mangdauphay[1]))/100+0.3085
-    // const lng = parseFloat(data.slice(mangdauphay[2]+1,mangdauphay[3]))/100+0.263597
-    // if(lat === NaN || lng === NaN){  
-    //   setDatalogger({
-    //     lat:  10.767542921678812, 
-    //     lng: 106.65888405789089 ,
-    //   })
-    // }
-    // else{
-    //    setDatalogger({
-    //   lat:  lat, 
-    //   lng: lng ,
-    // })
-    // }
   }    
   if(topic === 'SAWACO/STM32/Longitude'){
     const jsonDatalng = JSON.parse(message.toString());
     array.push(jsonDatalng)
     console.log(jsonDatalng)
-    
-    // const jsonData = JSON.parse(message.toString());
   }
 
   if(array.length === 2){
-            setDatalogger({ lat:  parseFloat(array[0].value),  lng:  parseFloat(array[1].value)})           
+    if(parseFloat(array[0].value)>0){
+            setcount( pre => pre + 1 )
+            settimeStamp(array[0].timestamp)
+            setDatalogger({ lat:  parseFloat(array[0].value),  lng:  parseFloat(array[1].value)})                      
             console.log(array)
-            array=[]      
+            array = [] 
+    }                
   }
 });
 
@@ -87,10 +80,8 @@ client.on('message', (topic, message) => {
 // }, []);
 
 // useEffect(()=>{
-
 //   let dataArray = []
 //   let i = 0
-
 //   let connection = new signalR.HubConnectionBuilder()
 //       .withUrl("https://testsawacogps.azurewebsites.net/NotificationHub")
 //       .withAutomaticReconnect()
@@ -111,11 +102,8 @@ client.on('message', (topic, message) => {
 //   connection.onreconnecting(error => {
 //       console.warn('Kết nối đang được thử lại...', error);
 //   });
-
 //   connection.on("GetAll", data => {
-
 //     dataArray.push(JSON.parse(data))
-    
 //     i++
 //     if(i===2){
 //       console.log('lat',parseFloat(dataArray[0].Value))
@@ -125,7 +113,6 @@ client.on('message', (topic, message) => {
 //       dataArray = []
 //     }
 //   });
-
 // },[])
 
 const handleMapClickGetLocation = (e) => {
@@ -165,13 +152,11 @@ useEffect(() => {
 //   return () => clearInterval(interval);
 // }, []);
 
-
-
-
   return (
     <div className='App'>
                   <div className='title'>
-                          HỆ THỐNG GIÁM SÁT DATALOGGER
+                          <div>HỆ THỐNG GIÁM SÁT DATALOGGER</div>
+                          {/* <div>{count}</div> */}
                   </div>
                   
                     <MapContainer 
@@ -188,10 +173,11 @@ useEffect(() => {
                                 <Marker 
                                   className='maker'
                                   position={[datalogger.lat,datalogger.lng]}
-                                  icon={ wakeup }                                
+                                  icon= { wakeup }                                
                                 >
                                     <Popup>
-                                            {`lat:${datalogger.lat} - lng:${datalogger.lng}`}                                         
+                                            {`lat:${datalogger.lat} - lng:${datalogger.lng} - ${timeStamp}`}                                         
+                                                                           
                                     </Popup>    
                                 </Marker>
                         
